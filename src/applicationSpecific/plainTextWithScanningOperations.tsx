@@ -30,6 +30,7 @@ const renderOp = (op: string | number, key: string | number) => {
 
 const CodeMirrorComponent = makeCodeMirrorComponent<TextOperation>(
   CodeMirrorAdapter.applyOperationToCodeMirror,
+  CodeMirrorAdapter.applyOperationToMonaco,
   (changes, editor) => {
     const [operation] = CodeMirrorAdapter.operationFromCodeMirrorChanges(changes, editor);
     return operation;

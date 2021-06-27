@@ -12,6 +12,7 @@ import { CodeMirrorAdapter } from "./codemirror-adapter";
 import type { Editor } from "codemirror";
 // @ts-ignore
 import React from "react";
+import type { monaco } from "react-monaco-editor";
 
 enum BasicTextOperationType {
   Insert = "INSERT",
@@ -105,6 +106,13 @@ const CodeMirrorComponent = makeCodeMirrorComponent<AggregatedBasicTextOperation
   (operation: AggregatedBasicTextOperation, editor: Editor) => {
     const textLength = editor.getDoc().getValue().length; // TODO: can we implement this more efficiently?
     CodeMirrorAdapter.applyOperationToCodeMirror(
+      aggregatedBasicTextOperationToTextOperation(operation, textLength),
+      editor,
+    );
+  },
+  (operation: AggregatedBasicTextOperation, editor: monaco.editor.IStandaloneCodeEditor) => {
+    const textLength = editor.getValue().length; // TODO: can we implement this more efficiently?
+    CodeMirrorAdapter.applyOperationToMonaco(
       aggregatedBasicTextOperationToTextOperation(operation, textLength),
       editor,
     );

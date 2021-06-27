@@ -1,5 +1,6 @@
 import { TextOperation } from "ot";
 import type { Doc, Position, Editor, EditorChangeLinkedList } from "codemirror";
+import type { monaco } from "react-monaco-editor";
 
 function cmpPos(a: Position, b: Position) {
   if (a.line < b.line) {
@@ -135,6 +136,7 @@ export class CodeMirrorAdapter {
 
   // Apply an operation to a CodeMirror instance.
   static applyOperationToCodeMirror(operation: TextOperation, cm: Editor) {
+    console.log("apply edit:", operation.ops)
     cm.operation(function () {
       const ops = operation.ops;
       let index: number = 0; // holds the current index into CodeMirror's content
@@ -148,9 +150,55 @@ export class CodeMirrorAdapter {
         } else if (TextOperation.isDelete(op)) {
           var from = cm.posFromIndex(index);
           var to = cm.posFromIndex(index - (op as number));
+          console.log("cm replace from", from, "to", to);
           cm.replaceRange("", from, to);
         }
       }
     });
+  }
+
+  // Apply an operation to a CodeMirror instance.
+  static applyOperationToMonaco(operation: TextOperation, me: monaco.editor.IStandaloneCodeEditor) {
+    const ops = operation.ops;
+    let index: number = 0;
+    for (var i = 0, l = ops.length; i < l; i++) {
+      var op = ops[i];
+      if (TextOperation.isRetain(op)) {
+        index += op as number;
+        console.log("go to", index);
+      } else if (TextOperation.isInsert(op)) {
+        console.log("execute monaco edit");
+        const start = me.getModel()!.getPositionAt(index);
+        const end = me.getModel()!.getPositionAt(index + (op as string).length);
+        me.executeEdits("", [
+          {
+            range: {
+              startLineNumber: start.lineNumber,
+              endLineNumber: start.lineNumber,
+              startColumn: start.column,
+              endColumn: start.column,
+            },
+            text: op as string,
+          },
+        ]);
+        //cm.replaceRange(op as string, cm.posFromIndex(index));
+        index += (op as string).length;
+      } else if (TextOperation.isDelete(op)) {
+        console.log("monaco delete", op, index);
+        const start = me.getModel()!.getPositionAt(index);
+        const end = me.getModel()!.getPositionAt(index - (op as number));
+        me.executeEdits("", [
+          {
+            range: {
+              startLineNumber: start.lineNumber,
+              endLineNumber: end.lineNumber,
+              startColumn: start.column,
+              endColumn: end.column,
+            },
+            text: "",
+          },
+        ]);
+      }
+    }
   }
 }

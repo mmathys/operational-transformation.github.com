@@ -17,6 +17,7 @@ import { createUseStyles } from "react-jss";
 import "cm-show-invisibles";
 import "codemirror/lib/codemirror.css";
 import "codemirror/theme/material.css";
+import MonacoEditor, { monaco } from "react-monaco-editor";
 
 export const replaceInvisibleCharacters = (str: string): string =>
   str.replace(/\n/g, "¬").replace(/ /g, "·");
@@ -44,6 +45,7 @@ const editorConfiguration: EditorConfiguration = {
 
 export const makeCodeMirrorComponent = <OpT extends unknown>(
   applyOperationToCodeMirror: (operation: OpT, editor: Editor) => void,
+  applyOperationToMonaco: (operation: OpT, editor: monaco.editor.IStandaloneCodeEditor) => void,
   operationFromCodeMirrorChanges: (changes: EditorChangeLinkedList[], editor: Editor) => OpT,
 ): ForwardRefExoticComponent<
   PropsWithoutRef<EditorProps<string, OpT>> & RefAttributes<EditorHandle<OpT>>
@@ -54,6 +56,7 @@ export const makeCodeMirrorComponent = <OpT extends unknown>(
     const [initialText] = useState(() => snapshot);
 
     const [editor, setEditor] = useState<Editor | undefined>(undefined);
+    const [monacoEditor, setMonacoEditor] = useState<monaco.editor.IStandaloneCodeEditor | undefined>(undefined);
 
     const applyingOperationFromServerRef = useRef<boolean>(false);
 
@@ -80,18 +83,30 @@ export const makeCodeMirrorComponent = <OpT extends unknown>(
         if (editor !== undefined) {
           applyingOperationFromServerRef.current = true;
           applyOperationToCodeMirror(textOperation, editor);
+          applyOperationToMonaco(textOperation, monacoEditor!);
           applyingOperationFromServerRef.current = false;
         }
       },
     }));
 
+    const editorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
+      console.log("mounted", editor)
+      setMonacoEditor(editor)
+    }
+
     return (
-      <CodeMirror
-        className={codeMirrorClasses.codeMirrorContainer}
-        options={editorConfiguration}
-        value={initialText}
-        editorDidMount={setEditor}
-      />
+      <div>
+        <CodeMirror
+          className={codeMirrorClasses.codeMirrorContainer}
+          options={editorConfiguration}
+          value={initialText}
+          editorDidMount={setEditor}
+        />
+        <MonacoEditor
+        width="420"
+        height="150"
+        editorDidMount={editorDidMount}></MonacoEditor>
+      </div>
     );
   });
 
