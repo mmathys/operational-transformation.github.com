@@ -13,6 +13,7 @@ import type { Editor } from "codemirror";
 // @ts-ignore
 import React from "react";
 import type { monaco } from "react-monaco-editor";
+import convertChangeEventToOperation from "./event-to-transform";
 
 enum BasicTextOperationType {
   Insert = "INSERT",
@@ -52,6 +53,7 @@ const makeDeleteOperation = (position: number, length: number): [] | [DeleteText
         },
       ];
 
+// ot.js TextOperation -> AggregatedBasicTextOperation
 function textOperationToAggregatedBasicTextOperation(
   textOperation: TextOperation,
 ): AggregatedBasicTextOperation {
@@ -72,6 +74,7 @@ function textOperationToAggregatedBasicTextOperation(
   return aggregatedBasicTextOperation;
 }
 
+// AggregatedBasicTextOperation -> ot.js TextOperation
 function aggregatedBasicTextOperationToTextOperation(
   aggregatedBasicTextOperation: AggregatedBasicTextOperation,
   textLength: number,
@@ -102,13 +105,21 @@ function aggregatedBasicTextOperationToTextOperation(
   return textOperation;
 }
 
+/**
+ * applyEditToCodeMirror: AggregatedBasicTextOperation, editor -> void
+ * applyEditToMonaco: AggregatedBasicTextOperation, editor -> void
+ * operationFromCodeMirrorChanges: CodeMirrorChange, editor -> AggregatedBasicTextOperation
+ * operationFromMonacoChanges: MonacoChange, editor -> AggregatedBasicTextOperation
+ */
 const CodeMirrorComponent = makeCodeMirrorComponent<AggregatedBasicTextOperation>(
   (operation: AggregatedBasicTextOperation, editor: Editor) => {
+    /*
     const textLength = editor.getDoc().getValue().length; // TODO: can we implement this more efficiently?
     CodeMirrorAdapter.applyOperationToCodeMirror(
       aggregatedBasicTextOperationToTextOperation(operation, textLength),
       editor,
     );
+    */
   },
   (operation: AggregatedBasicTextOperation, editor: monaco.editor.IStandaloneCodeEditor) => {
     const textLength = editor.getValue().length; // TODO: can we implement this more efficiently?
@@ -120,6 +131,10 @@ const CodeMirrorComponent = makeCodeMirrorComponent<AggregatedBasicTextOperation
   (changes, editor) => {
     const [operation] = CodeMirrorAdapter.operationFromCodeMirrorChanges(changes, editor);
     return textOperationToAggregatedBasicTextOperation(operation);
+  },
+  (event, editor) => {
+    const res = convertChangeEventToOperation(editor, event);
+    return textOperationToAggregatedBasicTextOperation(res.operation);
   },
 );
 
