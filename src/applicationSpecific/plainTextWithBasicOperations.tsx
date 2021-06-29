@@ -132,9 +132,12 @@ const CodeMirrorComponent = makeCodeMirrorComponent<AggregatedBasicTextOperation
     const [operation] = CodeMirrorAdapter.operationFromCodeMirrorChanges(changes, editor);
     return textOperationToAggregatedBasicTextOperation(operation);
   },
-  (event, editor) => {
-    const res = convertChangeEventToOperation(editor, event);
-    return textOperationToAggregatedBasicTextOperation(res.operation);
+  (event, editor, prev) => {
+    const res = convertChangeEventToOperation(editor, event, prev);
+    return {
+      operation: textOperationToAggregatedBasicTextOperation(res.operation),
+      newCode: res.newCode
+    }
   },
 );
 

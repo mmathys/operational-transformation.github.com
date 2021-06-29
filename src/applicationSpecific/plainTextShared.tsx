@@ -47,6 +47,7 @@ export const makeCodeMirrorComponent = <OpT extends unknown>(
   applyOperationToCodeMirror: (operation: OpT, editor: Editor) => void,
   applyOperationToMonaco: (operation: OpT, editor: monaco.editor.IStandaloneCodeEditor) => void,
   operationFromCodeMirrorChanges: (changes: EditorChangeLinkedList[], editor: Editor) => OpT,
+  operationFromMonacoChanges: (event: monaco.editor.IModelContentChangedEvent, editor: monaco.editor.IStandaloneCodeEditor, prev: string) => {operation: OpT, newCode: string},
 ): ForwardRefExoticComponent<
   PropsWithoutRef<EditorProps<string, OpT>> & RefAttributes<EditorHandle<OpT>>
 > =>
@@ -64,6 +65,20 @@ export const makeCodeMirrorComponent = <OpT extends unknown>(
       (editor: Editor, changes: EditorChangeLinkedList[]) => {
         if (!applyingOperationFromServerRef.current) {
           onUserChange(operationFromCodeMirrorChanges(changes, editor));
+        }
+      },
+      [onUserChange, applyingOperationFromServerRef],
+    );
+
+    let prev = "Lorem ipsum"
+    const onMonacoChange = useCallback(
+      (editor: monaco.editor.IStandaloneCodeEditor, event: monaco.editor.IModelContentChangedEvent) => {
+        if (!applyingOperationFromServerRef.current) {
+          console.log(event)
+          const c = operationFromMonacoChanges(event, editor, prev)
+          prev = c.newCode
+          console.log("monaco emits:", c)
+          onUserChange(c.operation);
         }
       },
       [onUserChange, applyingOperationFromServerRef],
@@ -91,6 +106,7 @@ export const makeCodeMirrorComponent = <OpT extends unknown>(
 
     const editorDidMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
       console.log("mounted", editor)
+      editor.onDidChangeModelContent(e => onMonacoChange(editor, e))
       setMonacoEditor(editor)
     }
 
@@ -105,6 +121,7 @@ export const makeCodeMirrorComponent = <OpT extends unknown>(
         <MonacoEditor
         width="420"
         height="150"
+        defaultValue={initialText}
         editorDidMount={editorDidMount}></MonacoEditor>
       </div>
     );

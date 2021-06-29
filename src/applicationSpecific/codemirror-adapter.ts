@@ -157,9 +157,10 @@ export class CodeMirrorAdapter {
     });
   }
 
-  // Apply an operation to a CodeMirror instance.
+  // Apply an operation to a Monaco instance.
   static applyOperationToMonaco(operation: TextOperation, me: monaco.editor.IStandaloneCodeEditor) {
     const ops = operation.ops;
+    console.log("apply ops to monaco:", ops)
     let index: number = 0;
     for (var i = 0, l = ops.length; i < l; i++) {
       var op = ops[i];

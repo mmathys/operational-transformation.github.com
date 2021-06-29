@@ -9,6 +9,7 @@ import {
   renderSnapshot,
   replaceInvisibleCharacters,
 } from "./plainTextShared";
+import convertChangeEventToOperation from "./event-to-transform"
 
 const renderOp = (op: string | number, key: string | number) => {
   if (typeof op === "string") {
@@ -34,6 +35,10 @@ const CodeMirrorComponent = makeCodeMirrorComponent<TextOperation>(
   (changes, editor) => {
     const [operation] = CodeMirrorAdapter.operationFromCodeMirrorChanges(changes, editor);
     return operation;
+  },
+  (event, editor, prev) => {
+    const res = convertChangeEventToOperation(editor, event, prev)
+    return res
   },
 );
 
